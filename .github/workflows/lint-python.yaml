@@ -19,8 +19,16 @@ jobs:
           echo -n "jobs=$(sudo snap install --no-wait codespell ruff shellcheck)" >> $GITHUB_OUTPUT
       - name: Check out code
         uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v4
+        id: filter
         with:
-          fetch-depth: 0 # Sphinx's linting uses the git history when getting timestamps.
+          # Combine multiple negation checks into a union (¬A ∧ ¬B ∧ ¬C), because individual entries are checked independently (A ∨ B ∨ C).
+          filters: |
+            src:
+              - '!({docs/**,*.md,**/*.md})'
+            docs:
+              - 'docs/**/*'
+              - '**/*.md'
       - name: Set up uv with caching
         id: setup-uv
         uses: astral-sh/setup-uv@v6
@@ -42,4 +50,8 @@ jobs:
             make -j setup-lint
           fi
       - name: Run linters
+        if: (steps.filter.outputs.src == 'true' && steps.filter.outputs.docs == 'false') || (steps.filter.outputs.src == 'true' && steps.filter.outputs.docs == 'true')
         run: make -k lint
+      - name: Run documentation linters
+        if: steps.filter.outputs.src == 'false' && steps.filter.outputs.docs == 'true'
+        run: make -k docs-lint
