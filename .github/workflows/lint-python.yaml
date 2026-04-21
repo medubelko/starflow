@@ -4,10 +4,10 @@ on:
     outputs:
       src-only: 
         description: "Whether the changes affect source files"
-        value: ${{ jobs.files.outputs.src }}
-      docs-only: 
-        description: "Whether the changes affect documentation files"
-        value: ${{ jobs.files.outputs.doc }}
+        value: ${{ jobs.files.outputs.source-files }}
+      #docs-only: 
+      #  description: "Whether the changes affect documentation files"
+      #  value: ${{ jobs.files.outputs.doc }}
   # Because we have a uv.lock file, we can also use this workflow to lint ourselves.
   pull_request:
     branches:
@@ -20,8 +20,8 @@ jobs:
   files:
     runs-on: ubuntu-latest
     outputs:
-      src: ${{ steps.filter.outputs.src }}
-      docs: ${{ steps.filter.outputs.docs }}
+      src: ${{ steps.filter.outputs.source-files }}
+      #docs: ${{ steps.filter.outputs.doc-files }}
     steps:
       - name: Begin snap installs of common linters
         id: snap-install
@@ -33,12 +33,18 @@ jobs:
         id: filter
         with:
           # Combine multiple negation checks into a union (¬A ∧ ¬B ∧ ¬C), because individual entries are checked independently (A ∨ B ∨ C).
+          # If we ever need to filter only for docs:
+          #  doc-files:
+          #    - 'docs/**/*'
+          #    - '**/*.md'
           filters: |
-            src:
+            source-files:
               - '!({docs/**,*.md,**/*.md})'
-            docs:
-              - 'docs/**/*'
-              - '**/*.md'
+      #- id: full-ci
+      #  run: |
+      #    full-ci=false
+      #    if ([[ "$docs" = "true" ]] && [[ "$src" = "true" ]]) || ([[ "$docs" = "false" ]] && [[ "$docs" ]]); then full-ci=true; fi
+      #    echo "full-ci=${full-ci}" > $GITHUB_OUTPUT
       - name: Set up uv with caching
         id: setup-uv
         uses: astral-sh/setup-uv@v6
@@ -60,8 +66,7 @@ jobs:
             make -j setup-lint
           fi
       - name: Run linters
-        if: (steps.filter.outputs.src == 'true' && steps.filter.outputs.docs == 'false') || (steps.filter.outputs.src == 'true' && steps.filter.outputs.docs == 'true')
+        if: steps.filter.outputs.source-files == 'true'
         run: make -k lint
       - name: Run documentation linters
-        if: steps.filter.outputs.src == 'false' && steps.filter.outputs.docs == 'true'
         run: make -k docs-lint
