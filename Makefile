@@ -1,5 +1,5 @@
 # Env vars for the docs Starter Pack. They must be exported so make can pass them to the
-# docs Makefile.
+# docs Makefile. !!!TEST
 export DOCS_BUILDDIR ?= _build
 export DOCS_VENVDIR ?= ../.venv
 export VALEDIR ?= $(VENVDIR)/lib/python*/site-packages/vale
