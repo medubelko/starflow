@@ -1,6 +1,6 @@
 # starflow
 
-Starcraft team GHA Workflows !!!TEST
+Starcraft team GHA Workflows
 
 # Reusable Workflows
 
